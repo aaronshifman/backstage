@@ -1,0 +1,16 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{.Release.Name}}-cluster
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: {{.Release.Name}}-pg
+  podMetricsEndpoints:
+    - port: metrics
+{{- end}}

@@ -1,0 +1,21 @@
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-web-egress
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  egress:
+
+    - toFQDNs:
+        - matchName: github.com
+        - matchName: api.github.com
+        - matchName: raw.githubusercontent.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

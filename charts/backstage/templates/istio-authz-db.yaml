@@ -1,0 +1,18 @@
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1
+metadata:
+  name: {{.Release.Name}}-pg
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: {{.Release.Name}}-pg
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/{{ .Release.Namespace }}/sa/{{.Release.Name}}-pg
+              - cluster.local/ns/{{ .Release.Namespace }}/sa/{{.Release.Name}}
+              - cluster.local/ns/cnpg-system/sa/cnpg-operator-cloudnative-pg

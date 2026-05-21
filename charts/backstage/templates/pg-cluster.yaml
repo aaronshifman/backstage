@@ -1,0 +1,47 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{.Release.Name}}-pg
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+    k8s.shifman.dev/netpol.kube-dns: "true"
+    k8s.shifman.dev/netpol.prometheus: "true"
+    k8s.shifman.dev/netpol.kube-apiserver: "true"
+    k8s.shifman.dev/netpol.backup: "true"
+
+  annotations:
+    cnpg.io/skipEmptyWalArchiveCheck: enabled
+spec:
+  imageName: docker.shifman.dev/ghcr/cloudnative-pg/postgresql:17.0
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: &objectStore pg-minio
+  externalClusters:
+    - name: &previousCluster {{.Release.Name}}-pg
+      plugin:
+        enabled: true
+        isWALArchiver: false
+        name: barman-cloud.cloudnative-pg.io
+        parameters:
+          barmanObjectName: *objectStore
+          serverName: *previousCluster
+  {{- if .Values.postgres.backups.enabled}}
+  bootstrap:
+    recovery:
+      source: *previousCluster
+  {{- end}}
+  instances: {{.Values.postgres.replicas}}
+  storage:
+    size: 5Gi
+    storageClass: "longhorn-single"
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 500Mi
+{{- end}}

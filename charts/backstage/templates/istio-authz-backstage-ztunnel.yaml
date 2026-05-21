@@ -1,0 +1,17 @@
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1
+metadata:
+  name: {{.Release.Name}}-ztunnel
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/{{ .Release.Namespace }}/sa/{{.Release.Name}}-waypoint
+              - cluster.local/ns/istio-system/sa/istio-ingress-istio

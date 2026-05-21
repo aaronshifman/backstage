@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-access-apps
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: secrets
+  annotations:
+    vault.hashicorp.com/role: "apps"
+automountServiceAccountToken: false

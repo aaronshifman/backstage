@@ -1,0 +1,8 @@
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1
+metadata:
+  name: deny-all
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec: {}

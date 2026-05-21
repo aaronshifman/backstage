@@ -1,0 +1,27 @@
+image:
+  repository: "ghcr.io/aaronshifman/backstage"
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+ingress:
+  hostname: backstage.foo.com
+
+postgres:
+  enabled: true
+  clusterName: backstage
+  replicas: 3
+  backups:
+    enabled: true
+    s3Location: https://s3.foo.com
+
+vault:
+  url: vault.foo.com

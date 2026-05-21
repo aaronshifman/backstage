@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: waypoint-to-istio
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  egress:
+    - ports:
+        - port: 15012
+          protocol: TCP
+      to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: istio-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: istio
+              app.kubernetes.io/name: istiod
+  podSelector:
+    matchLabels:
+      gateway.networking.k8s.io/gateway-class-name: istio-waypoint
+  policyTypes:
+    - Egress

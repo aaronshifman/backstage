@@ -1,0 +1,17 @@
+kind: AuthorizationPolicy
+apiVersion: security.istio.io/v1
+metadata:
+  name: {{.Release.Name}}
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{.Release.Name}}-waypoint
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-system/sa/istio-ingress-istio

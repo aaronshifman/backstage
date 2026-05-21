@@ -1,0 +1,12 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-access-sso
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: secrets
+  annotations:
+    vault.hashicorp.com/role: "sso"
+automountServiceAccountToken: false
+{{- end}}

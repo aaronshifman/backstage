@@ -7,6 +7,7 @@
  */
 
 import { createBackend } from '@backstage/backend-defaults';
+import { kubernetesOidcAuthModule } from './kubernetes-auth';
 
 const backend = createBackend();
 
@@ -28,6 +29,7 @@ backend.add(import('@backstage/plugin-auth-backend'));
 // See https://backstage.io/docs/backend-system/building-backends/migrating#the-auth-plugin
 backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 // See https://backstage.io/docs/auth/guest/provider
+backend.add(import('@backstage/plugin-auth-backend-module-oidc-provider'));
 
 // catalog plugin
 backend.add(import('@backstage/plugin-catalog-backend'));
@@ -66,4 +68,19 @@ backend.add(import('@backstage/plugin-signals-backend'));
 // mcp actions plugin
 backend.add(import('@backstage/plugin-mcp-actions-backend'));
 
+backend.add(
+  import('@backstage-community/plugin-catalog-backend-module-keycloak'),
+);
+
+backend.add(import('@backstage-community/plugin-argocd-backend'));
+backend.add(kubernetesOidcAuthModule);
+backend.add(
+  import('@internal/backstage-plugin-catalog-backend-module-k8s-cnpg'),
+);
+
+backend.add(import('@backstage/plugin-catalog-backend-module-github-org'));
+backend.add(import('@backstage/plugin-catalog-backend-module-github'));
+backend.add(import('@internal/backstage-plugin-kubescape-backend'));
+
+backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
 backend.start();

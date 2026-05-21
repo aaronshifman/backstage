@@ -1,0 +1,5 @@
+[tools]
+node = "22"
+prettier = "latest"
+task = "latest"
+yarn = "latest"

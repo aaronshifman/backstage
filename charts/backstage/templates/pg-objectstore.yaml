@@ -1,0 +1,23 @@
+{{- if and .Values.postgres.enabled .Values.postgres.backups.enabled }}
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: pg-minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  configuration:
+    destinationPath: s3://cnpg-backup/
+    endpointURL: {{.Values.postgres.backups.s3Location}}
+    s3Credentials:
+      accessKeyId:
+        name: pg-minio-secret
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: pg-minio-secret
+        key: ACCESS_SECRET_KEY
+    wal:
+      compression: gzip
+{{- end}}

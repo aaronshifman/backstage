@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Chart.Name}}
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "backstage.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        k8s.shifman.dev/netpol.kube-apiserver: "true"
+        k8s.shifman.dev/netpol.kube-dns: "true"
+        {{- include "backstage.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      imagePullSecrets:
+        - name: docker-pull-secret
+      serviceAccountName: {{.Release.Name}}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: backstage
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 7007
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: {{.Release.Name}}-secrets
+          env:
+            - name: BACKSTAGE_HOSTNAME
+              value: {{ .Values.ingress.hostname }}
+            - name: POSTGRES_HOST
+              value: "{{.Release.Name}}-pg-rw.{{ .Release.Namespace }}.svc.cluster.local"
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: "app"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{.Release.Name}}-pg-app
+                  key: password
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          readinessProbe:
+            httpGet:
+              path: /.backstage/health/v1/readiness
+              port: 7007
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /.backstage/health/v1/liveness
+              port: 7007
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}

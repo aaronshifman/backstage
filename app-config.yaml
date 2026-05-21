@@ -1,5 +1,5 @@
 app:
-  title: Scaffolded Backstage App
+  title: Backstage
   baseUrl: http://localhost:3000
 
   # Enable all packages by default, this will discover packages from packages/app/package.json
@@ -17,8 +17,17 @@ app:
         config:
           path: /
 
+argocd:
+  fullDeploymentHistory: true
+  appLocatorMethods:
+    - type: 'config'
+      instances:
+        - name: argo
+          url: https://argo.shifman.dev
+          token: ${ARGOCD_KEY}
+
 organization:
-  name: My Company
+  name: Shifman
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
@@ -84,8 +93,19 @@ techdocs:
     type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
 
 auth:
+  environment: development
+  session:
+    secret: localenv123
   # see https://backstage.io/docs/auth/ to learn about auth providers
   providers:
+    oidc:
+      development:
+        metadataUrl: https://keycloak.shifman.dev/realms/master/.well-known/openid-configuration
+        clientId: backstage
+        clientSecret: ${BACKSTAGE_KEY}
+        signIn:
+          resolvers:
+            - resolver: emailMatchingUserEntityProfileEmail
     # See https://backstage.io/docs/auth/guest/provider
     guest: {}
   # see https://backstage.io/docs/ai/mcp-actions#client-id-metadata-documents
@@ -105,6 +125,37 @@ scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
 catalog:
+  providers:
+    github:
+      providerId:
+        organization: 'aaronshifman' # string
+        catalogPath: '**/catalog-info.yaml' # string
+        filters:
+          branch: 'main' # string
+          repository: '.*' # Regex
+        schedule: # same options as in SchedulerServiceTaskScheduleDefinition
+          # supports cron, ISO duration, "human duration" as used in code
+          frequency: { minutes: 30 }
+          # supports ISO duration, "human duration" as used in code
+          timeout: { minutes: 3 }
+    k8SCnpgProvider:
+      clusterUrl: ${KUBERNETES_CP}
+      caData: ${CA_DATA}
+      token: ${KUBERNETES_TOKEN}
+      owner: group:default/platform
+      schedule:
+        frequency: { minutes: 10 }
+        timeout: { minutes: 2 }
+    keycloakOrg:
+      default:
+        baseUrl: https://keycloak.shifman.dev
+        loginRealm: master
+        realm: master
+        clientId: backstage
+        clientSecret: ${BACKSTAGE_KEY}
+        schedule:
+          frequency: { minutes: 30 }
+          timeout: { minutes: 3 }
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
@@ -138,7 +189,24 @@ catalog:
     #     - allow: [User, Group]
 
 kubernetes:
-  # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
+  frontend:
+    podDelete:
+      enabled: true
+  serviceLocatorMethod:
+    type: singleTenant
+  clusterLocatorMethods:
+    - type: 'config'
+      clusters:
+        - url: ${KUBERNETES_CP}
+          name: shifman
+          authProvider: serviceAccount
+          serviceAccountToken: ${KUBERNETES_TOKEN}
+          caData: ${CA_DATA}
+
+kubescape:
+  clusterUrl: ${KUBERNETES_CP}
+  caData: ${CA_DATA}
+  token: ${KUBERNETES_TOKEN}
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
 permission:

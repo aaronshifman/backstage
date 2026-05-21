@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-hbone
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+spec:
+  egress:
+    - ports:
+        - port: 15008
+          protocol: TCP
+  ingress:
+    - ports:
+        - port: 15008
+          protocol: TCP
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

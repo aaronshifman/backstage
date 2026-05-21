@@ -1,0 +1,12 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{.Release.Name}}-pg-backup
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  annotations:
+    vault.hashicorp.com/role: "{{.Release.Name}}-pg-backup"
+automountServiceAccountToken: false
+{{- end}}

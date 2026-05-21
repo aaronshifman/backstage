@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{.Release.Name}}-waypoint
+  labels:
+    {{- include "backstage.labels" . | nindent 4 }}
+    app.kubernetes.io/component: networking
+    istio.io/waypoint-for: service
+    k8s.shifman.dev/netpol.kube-dns: "true"
+    k8s.shifman.dev/netpol.prometheus: "true"
+spec:
+  gatewayClassName: istio-waypoint
+  listeners:
+    - name: mesh
+      port: 15008
+      protocol: HBONE

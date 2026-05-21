@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+dotenv:
+  - .env
+
+vars:
+  CA_DATA:
+    sh: kubectl config view --raw -o jsonpath='{.clusters[?(@.name=="shifman")].cluster.certificate-authority-data}'
+  KUBERNETES_TOKEN:
+    sh: kubectl create token backstage -n backstage --duration=24h
+  GITHUB_TOKEN:
+    sh: gh auth token
+
+env:
+  CA_DATA: "{{.CA_DATA}}"
+  KUBERNETES_TOKEN: "{{.KUBERNETES_TOKEN}}"
+  GITHUB_TOKEN: "{{.GITHUB_TOKEN}}"
+  KUBERNETES_CP: "https://192.168.2.21:6443"
+
+tasks:
+  default:
+    cmd: task --list
+    silent: true
+
+  run:
+    desc: Start the dev server
+    cmd: yarn start
+
+  test:
+    desc: Run all tests
+    cmd: yarn test
+
+  lint:
+    desc: Lint and format check
+    cmds:
+      - yarn lint:all
+      - yarn prettier:check
+
+  lint:fix:
+    cmd: yarn prettier --write .
+
+  gen:cnpg-schema:
+    desc: Regenerate CNPG Cluster Zod schema from upstream CRD
+    vars:
+      CNPG_VERSION: '{{.CNPG_VERSION | default "v1.29.1"}}'
+    cmds:
+      - mkdir -p plugins/catalog-backend-module-k8s-cnpg/src/generated
+      - |
+        SCHEMA=$(curl -sL "https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/{{.CNPG_VERSION}}/config/crd/bases/postgresql.cnpg.io_clusters.yaml" \
+          | yq '.spec.versions[] | select(.name == "v1") | .schema.openAPIV3Schema' -oj)
+        {
+          printf '// @ts-nocheck\n// This file is auto-generated. Do not edit manually.\n// Regenerate with: task gen:cnpg-schema\n// CNPG Version: {{.CNPG_VERSION}}\n\n'
+          ./node_modules/.bin/json-schema-to-zod -i "$SCHEMA" --name CnpgClusterSchema --module esm
+          printf '\nexport type CnpgCluster = z.infer<typeof CnpgClusterSchema>;\n'
+        } > plugins/catalog-backend-module-k8s-cnpg/src/generated/CnpgClusterSchema.ts
