@@ -14,7 +14,6 @@ WORKDIR /app
 # Stage 1: Full build
 FROM base-builder AS build
 
-COPY .yarn ./.yarn
 COPY .yarnrc.yml backstage.json yarn.lock package.json ./
 # Copy workspace dirs and strip everything except package.json files so new
 # packages are picked up automatically. yarn install re-runs on source changes
