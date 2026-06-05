@@ -15,6 +15,7 @@ metadata:
     cnpg.io/skipEmptyWalArchiveCheck: enabled
 spec:
   imageName: docker.shifman.dev/ghcr/cloudnative-pg/postgresql:17.0
+  {{- if .Values.postgres.backups.enabled}}
   plugins:
     - name: barman-cloud.cloudnative-pg.io
       isWALArchiver: true
@@ -29,7 +30,6 @@ spec:
         parameters:
           barmanObjectName: *objectStore
           serverName: *previousCluster
-  {{- if .Values.postgres.backups.enabled}}
   bootstrap:
     recovery:
       source: *previousCluster
