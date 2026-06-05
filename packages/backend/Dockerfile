@@ -45,7 +45,12 @@ RUN corepack enable && corepack install
 RUN --mount=type=cache,target=/yarn-cache,sharing=locked \
     yarn workspaces focus --all --production
 
-# Stage 3: Minimal runtime image
+# Stage 3: Extract bundle (needs shell, use builder image)
+FROM base-builder AS bundle
+COPY --from=build /app/packages/backend/dist/bundle.tar.gz ./
+RUN tar xzf bundle.tar.gz && rm bundle.tar.gz
+
+# Stage 4: Minimal runtime image
 FROM dhi.io/node:24-alpine3.23
 
 ENV NODE_ENV=production
@@ -54,10 +59,10 @@ ENV NODE_OPTIONS="--no-node-snapshot"
 WORKDIR /app
 
 COPY --from=prod-deps /app .
-COPY --from=build /app/packages/app/dist/ ./packages/app/dist/
-COPY --from=build /app/packages/backend/dist/ ./packages/backend/dist/
-COPY --from=build /app/plugins/kubescape-backend/dist/ ./plugins/kubescape-backend/dist/
-COPY --from=build /app/plugins/catalog-backend-module-k8s-cnpg/dist/ ./plugins/catalog-backend-module-k8s-cnpg/dist/
+COPY --from=bundle /app/packages/backend/dist/ ./packages/backend/dist/
+COPY --from=bundle /app/packages/app/dist/ ./packages/app/dist/
+COPY --from=bundle /app/plugins/kubescape-backend/dist/ ./plugins/kubescape-backend/dist/
+COPY --from=bundle /app/plugins/catalog-backend-module-k8s-cnpg/dist/ ./plugins/catalog-backend-module-k8s-cnpg/dist/
 COPY --from=build /app/plugins/k8s-crd-client-node/dist/ ./plugins/k8s-crd-client-node/dist/
 COPY --from=build /app/app-config*.yaml ./
 
