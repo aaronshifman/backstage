@@ -17,6 +17,11 @@ app:
         config:
           path: /
 
+    - entity-card:tech-insights/scorecards:
+        config:
+          filter: { kind: component }
+    - entity-content:tech-insights/scorecards-content: false
+
 argocd:
   fullDeploymentHistory: true
   appLocatorMethods:
@@ -217,3 +222,78 @@ permission:
 mcpActions:
   name: 'My Company Backstage' # defaults to "backstage"
   description: 'Tools for managing your software catalog, creating new services from templates, and exploring your developer portal' # optional
+
+techInsights:
+  factRetrievers:
+    componentCompletenessFactRetriever:
+      cadence: '0 3 * * *' # daily at 03:00
+      initialDelay: { seconds: 90 }
+      lifecycle: { timeToLive: { weeks: 2 } }
+  factChecker:
+    checks:
+      hasOwner:
+        type: json-rules-engine
+        name: Has owner
+        description: Component has a non-unknown owner
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: hasOwner
+                operator: equal
+                value: true
+      hasSystem:
+        type: json-rules-engine
+        name: Belongs to a System
+        description: Component declares spec.system
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: hasSystem
+                operator: equal
+                value: true
+      hasDescription:
+        type: json-rules-engine
+        name: Has description
+        description: Component metadata has a description
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: hasDescription
+                operator: equal
+                value: true
+      hasSourceLocation:
+        type: json-rules-engine
+        name: Has source location
+        description: Component has a backstage.io/source-location annotation
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: hasSourceLocation
+                operator: equal
+                value: true
+      hasTechdocs:
+        type: json-rules-engine
+        name: Has TechDocs
+        description: Component has a backstage.io/techdocs-ref annotation
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: hasTechdocs
+                operator: equal
+                value: true
+      gitopsWired:
+        type: json-rules-engine
+        name: GitOps wired
+        description: Component has both an ArgoCD app and a Kubernetes annotation
+        factIds: [componentCompletenessFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: gitopsWired
+                operator: equal
+                value: true

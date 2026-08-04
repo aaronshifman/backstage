@@ -15,6 +15,7 @@ import {
   ArgocdDeploymentLifecycle,
   isArgocdConfigured,
 } from '@backstage-community/plugin-argocd';
+import techInsightsPlugin from '@backstage-community/plugin-tech-insights/alpha';
 
 const argocdFrontendPlugin = convertLegacyPlugin(argocdPlugin, {
   extensions: [
@@ -107,6 +108,7 @@ export default createApp({
     kubescapeFrontendPlugin,
     navModule,
     githubActionsPlugin,
+    techInsightsPlugin,
     createFrontendModule({
       pluginId: 'app',
       extensions: [keycloakAuthApi, signInPage],
