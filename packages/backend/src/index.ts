@@ -65,6 +65,15 @@ backend.add(import('@backstage/plugin-kubernetes-backend'));
 backend.add(import('@backstage/plugin-notifications-backend'));
 backend.add(import('@backstage/plugin-signals-backend'));
 
+// tech-insights
+backend.add(import('@backstage-community/plugin-tech-insights-backend'));
+backend.add(
+  import('@backstage-community/plugin-tech-insights-backend-module-jsonfc'),
+);
+backend.add(
+  import('@internal/backstage-plugin-tech-insights-backend-module-retrievers'),
+);
+
 // mcp actions plugin
 backend.add(import('@backstage/plugin-mcp-actions-backend'));
 
