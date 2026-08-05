@@ -1,6 +1,7 @@
 import { createBackendModule } from '@backstage/backend-plugin-api';
 import { techInsightsFactRetrieversExtensionPoint } from '@backstage-community/plugin-tech-insights-node';
 import { componentCompletenessFactRetriever } from './componentCompletenessFactRetriever';
+import { cnpgBackupFactRetriever } from './cnpgBackupFactRetriever';
 
 export const techInsightsModuleRetrievers = createBackendModule({
   pluginId: 'tech-insights',
@@ -9,7 +10,10 @@ export const techInsightsModuleRetrievers = createBackendModule({
     reg.registerInit({
       deps: { providers: techInsightsFactRetrieversExtensionPoint },
       async init({ providers }) {
-        providers.addFactRetrievers({ componentCompletenessFactRetriever });
+        providers.addFactRetrievers({
+          componentCompletenessFactRetriever,
+          cnpgBackupFactRetriever,
+        });
       },
     });
   },

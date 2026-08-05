@@ -19,7 +19,11 @@ app:
 
     - entity-card:tech-insights/scorecards:
         config:
-          filter: { kind: component }
+          filter:
+            $any:
+              - kind: component
+              - kind: resource
+                metadata.annotations.cnpg.io/cluster-name: { $exists: true }
     - entity-content:tech-insights/scorecards-content: false
 
 argocd:
@@ -229,6 +233,10 @@ techInsights:
       cadence: '0 3 * * *' # daily at 03:00
       initialDelay: { seconds: 90 }
       lifecycle: { timeToLive: { weeks: 2 } }
+    cnpgBackupFactRetriever:
+      cadence: '0 3 * * *' # daily at 03:00
+      initialDelay: { seconds: 90 }
+      lifecycle: { timeToLive: { weeks: 2 } }
   factChecker:
     checks:
       hasOwner:
@@ -297,3 +305,39 @@ techInsights:
               - fact: gitopsWired
                 operator: equal
                 value: true
+      cnpgWalArchivingEnabled:
+        type: json-rules-engine
+        name: CNPG WAL archiving enabled
+        description: Continuous WAL archiving is active for the database
+        factIds: [cnpgBackupFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: walArchivingEnabled
+                operator: equal
+                value: true
+      cnpgBackupConfigured:
+        type: json-rules-engine
+        name: CNPG backup configured
+        description: A backup is configured for the database
+        factIds: [cnpgBackupFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: backupConfigured
+                operator: equal
+                value: true
+      cnpgBackupRecent:
+        type: json-rules-engine
+        name: CNPG backup within 24h
+        description: The last backup succeeded and is less than 24 hours old
+        factIds: [cnpgBackupFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: backupSucceeded
+                operator: equal
+                value: true
+              - fact: hoursSinceLastBackup
+                operator: lessThan
+                value: 24
