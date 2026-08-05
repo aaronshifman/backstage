@@ -61,8 +61,7 @@ WORKDIR /app
 COPY --from=prod-deps /app .
 COPY --from=bundle /app/packages/backend/dist/ ./packages/backend/dist/
 COPY --from=bundle /app/packages/app/dist/ ./packages/app/dist/
-COPY --from=bundle /app/plugins/kubescape-backend/dist/ ./plugins/kubescape-backend/dist/
-COPY --from=bundle /app/plugins/catalog-backend-module-k8s-cnpg/dist/ ./plugins/catalog-backend-module-k8s-cnpg/dist/
+COPY --from=bundle /app/plugins/ ./plugins/
 COPY --from=build /app/plugins/k8s-crd-client-node/dist/ ./plugins/k8s-crd-client-node/dist/
 COPY --from=build /app/app-config*.yaml ./
 
