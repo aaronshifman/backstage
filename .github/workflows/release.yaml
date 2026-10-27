@@ -1,0 +1,205 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
+  CHART_NAME: backstage
+
+jobs:
+  build-image:
+    name: Build image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short,prefix=sha-
+
+      - name: Build and Push
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .
+          file: packages/backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+      - name: Sign Image
+        run: cosign sign --yes "${IMAGE_NAME}@${{ steps.push.outputs.digest }}"
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@28d71544de8eaf1b958d335707167c5f783590ad # v0.22.2
+        with:
+          image: ${{ env.IMAGE_NAME }}@${{ steps.push.outputs.digest }}
+          output-file: sbom.spdx.json
+          upload-artifact: false
+          dependency-snapshot: true
+
+      - name: Attest Image SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          sbom-path: sbom.spdx.json
+          push-to-registry: true
+
+  release-please:
+    name: Release PR / tags
+    runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      app_released: ${{ steps.released.outputs.app }}
+      chart_released: ${{ steps.released.outputs.chart }}
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: rp
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Which components released
+        id: released
+        env:
+          PATHS: ${{ steps.rp.outputs.paths_released || '[]' }}
+        run: |
+          echo "app=$(jq -r 'index(".") != null' <<<"$PATHS")" >> "$GITHUB_OUTPUT"
+          echo "chart=$(jq -r 'index("charts/backstage") != null' <<<"$PATHS")" >> "$GITHUB_OUTPUT"
+
+  tag-image:
+    name: Tag release image
+    needs: [build-image, release-please]
+    if: needs.release-please.outputs.app_released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Tag digest with release version
+        env:
+          DIGEST: ${{ needs.build-image.outputs.digest }}
+        run: |
+          VERSION="$(cat version.txt)"
+          docker buildx imagetools create --tag "${IMAGE_NAME}:${VERSION}" "${IMAGE_NAME}@${DIGEST}"
+
+  publish-chart:
+    name: Publish chart
+    needs: release-please
+    if: needs.release-please.outputs.chart_released == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5
+        with:
+          version: v3.18.3
+
+      - name: Package Chart
+        run: |
+          helm package "charts/${CHART_NAME}"
+          echo "VERSION=$(helm show chart "charts/${CHART_NAME}" | awk '/^version:/{print $2}')" >> "$GITHUB_ENV"
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+
+      - name: Generate Chart SBOM
+        run: syft packages "dir:charts/${CHART_NAME}" -o spdx-json > chart-sbom.spdx.json
+
+      - name: Login Helm OCI
+        run: |
+          echo "${{ github.token }}" \
+            | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push Chart
+        run: |
+          OUTPUT=$(helm push "${CHART_NAME}-${VERSION}.tgz" \
+            oci://ghcr.io/${{ github.repository_owner }}/charts 2>&1)
+          echo "$OUTPUT"
+          echo "CHART_DIGEST=$(echo "$OUTPUT" | awk '/^Digest:/{print $2}')" >> "$GITHUB_ENV"
+
+      - name: Attest Chart Provenance
+        uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/charts/${{ env.CHART_NAME }}
+          subject-digest: ${{ env.CHART_DIGEST }}
+          push-to-registry: true
+
+      - uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+
+      - name: Sign Chart
+        run: cosign sign --yes "ghcr.io/${{ github.repository_owner }}/charts/${CHART_NAME}@${CHART_DIGEST}"
+
+      - name: Attest Chart SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/charts/${{ env.CHART_NAME }}
+          subject-digest: ${{ env.CHART_DIGEST }}
+          sbom-path: chart-sbom.spdx.json
+          push-to-registry: true
