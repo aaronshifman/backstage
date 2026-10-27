@@ -1,0 +1,18 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "include-component-in-tag": true,
+  "separate-pull-requests": true,
+  "bump-minor-pre-major": true,
+  "bootstrap-sha": "c30c74dea38d69c09486b6189f3f99281c75122d",
+  "packages": {
+    ".": {
+      "component": "app",
+      "release-type": "simple",
+      "exclude-paths": ["charts", "docs"]
+    },
+    "charts/backstage": {
+      "component": "chart",
+      "release-type": "helm"
+    }
+  }
+}
