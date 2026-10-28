@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/aaronshifman/backstage/compare/chart-v0.9.0...chart-v0.9.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* chart istio policies ([#20](https://github.com/aaronshifman/backstage/issues/20)) ([0cbea29](https://github.com/aaronshifman/backstage/commit/0cbea29d806c5d52c1093ebd08e3416ca7769c71))
+
 ## [0.9.0](https://github.com/aaronshifman/backstage/compare/chart-v0.8.1...chart-v0.9.0) (2026-10-28)
 
 
