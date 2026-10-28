@@ -192,6 +192,12 @@ jobs:
       - name: Generate Chart SBOM
         run: syft packages "dir:charts/${CHART_NAME}" -o spdx-json > chart-sbom.spdx.json
 
+      - uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
       - name: Login Helm OCI
         run: |
           echo "${{ github.token }}" \
