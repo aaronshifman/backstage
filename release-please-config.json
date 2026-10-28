@@ -3,6 +3,7 @@
   "include-component-in-tag": true,
   "separate-pull-requests": true,
   "bump-minor-pre-major": true,
+  "always-update": true,
   "bootstrap-sha": "c30c74dea38d69c09486b6189f3f99281c75122d",
   "packages": {
     ".": {
