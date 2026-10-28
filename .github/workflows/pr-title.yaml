@@ -15,27 +15,13 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  pull-requests: read
 
 jobs:
   commitlint:
     name: Conventional PR title
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Enable Corepack
-        run: corepack enable
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
-        with:
-          node-version: '24'
-          cache: 'yarn'
-
-      - name: Install deps
-        run: yarn install --immutable
-
-      - name: Lint PR title
+      - uses: amannn/action-semantic-pull-request@48f256284bd46cdaab1048c3721360e808335d50 # v6.1.1
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: printf '%s\n' "$PR_TITLE" | yarn commitlint --verbose
+          GITHUB_TOKEN: ${{ github.token }}
