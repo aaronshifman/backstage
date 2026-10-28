@@ -17,16 +17,29 @@ env:
   CHART_NAME: backstage
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.filter.outputs.image }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: .github/path-filters.yaml
+
   build-image:
     name: Build image
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       attestations: write
       id-token: write
-    outputs:
-      digest: ${{ steps.push.outputs.digest }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -45,6 +58,7 @@ jobs:
           images: ${{ env.IMAGE_NAME }}
           tags: |
             type=sha,format=short,prefix=sha-
+            type=raw,value=main
 
       - name: Build and Push
         id: push
@@ -54,8 +68,9 @@ jobs:
           file: packages/backend/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@96278af6caaf10aea03fd8d33a09a777ca52d62f # v3.2.0
@@ -119,9 +134,12 @@ jobs:
           echo "chart=$(jq -r 'index("charts/backstage") != null' <<<"$PATHS")" >> "$GITHUB_OUTPUT"
 
   tag-image:
-    name: Tag release image
+    name: Promote release image
     needs: [build-image, release-please]
-    if: needs.release-please.outputs.app_released == 'true'
+    if: >-
+      always()
+      && needs.release-please.outputs.app_released == 'true'
+      && contains(fromJSON('["success", "skipped"]'), needs.build-image.result)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -137,11 +155,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
-      - name: Tag digest with release version
-        env:
-          DIGEST: ${{ needs.build-image.outputs.digest }}
+      - name: Promote main image to release version
         run: |
           VERSION="$(cat version.txt)"
+          DIGEST="$(docker buildx imagetools inspect "${IMAGE_NAME}:main" --format '{{json .Manifest}}' | jq -re .digest)"
+          REVISION="$(docker buildx imagetools inspect "${IMAGE_NAME}@${DIGEST}" --format '{{json .Image}}' \
+            | jq -r '[.. | .config?.Labels?["org.opencontainers.image.revision"]? // empty][0] // "unknown"')"
+          echo "Promoting ${IMAGE_NAME}@${DIGEST} (built from ${REVISION}) to ${VERSION}"
           docker buildx imagetools create --tag "${IMAGE_NAME}:${VERSION}" "${IMAGE_NAME}@${DIGEST}"
 
   publish-chart:

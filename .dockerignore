@@ -5,3 +5,9 @@ node_modules
 packages/*/node_modules
 plugins/*/node_modules
 *.local.yaml
+.github
+charts
+coverage
+dist-types
+docs
+examples

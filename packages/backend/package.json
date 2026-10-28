@@ -57,12 +57,11 @@
     "@internal/backstage-plugin-kubescape-backend": "workspace:^",
     "@internal/backstage-plugin-tech-insights-backend-module-retrievers": "workspace:^",
     "app": "link:../app",
-    "better-sqlite3": "^12.11.1",
-    "node-gyp": "^10.3.1",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@backstage/cli": "^0.36.7"
+    "@backstage/cli": "^0.36.7",
+    "better-sqlite3": "^12.11.1"
   },
   "files": [
     "dist"
