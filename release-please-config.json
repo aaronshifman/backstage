@@ -8,7 +8,15 @@
     ".": {
       "component": "app",
       "release-type": "simple",
-      "exclude-paths": ["charts", "docs"]
+      "exclude-paths": ["charts", "docs"],
+      "pull-request-title-pattern": "fix(chart): release${component} ${version}",
+      "extra-files": [
+        {
+          "type": "yaml",
+          "path": "charts/backstage/Chart.yaml",
+          "jsonpath": "$.appVersion"
+        }
+      ]
     },
     "charts/backstage": {
       "component": "chart",
