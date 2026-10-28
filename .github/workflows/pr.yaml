@@ -14,8 +14,28 @@ permissions:
   packages: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      image: ${{ steps.filter.outputs.image }}
+      chart: ${{ steps.filter.outputs.chart }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: .github/path-filters.yaml
+
   validate:
     name: Test and Lint
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -25,8 +45,8 @@ jobs:
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # 6.4.0
         with:
-          node-version: "24"
-          cache: "yarn"
+          node-version: '24'
+          cache: 'yarn'
 
       - name: Install deps
         run: yarn install --immutable
@@ -42,6 +62,8 @@ jobs:
 
   helm-lint:
     name: Helm Lint
+    needs: changes
+    if: needs.changes.outputs.chart == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -54,7 +76,9 @@ jobs:
         run: helm lint charts/backstage
 
   docker-build:
-    name: Docker Build (no push)
+    name: Docker Build
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -68,4 +92,3 @@ jobs:
           file: packages/backend/Dockerfile
           push: false
           cache-from: type=gha
-          cache-to: type=gha,mode=max

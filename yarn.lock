@@ -15632,7 +15632,6 @@ __metadata:
   dependencies:
     "@backstage-community/plugin-argocd-backend": "npm:^1.7.2"
     "@backstage-community/plugin-catalog-backend-module-keycloak": "npm:^3.23.1"
-    "@backstage-community/plugin-github-actions": "npm:^1.5.1"
     "@backstage-community/plugin-tech-insights-backend": "npm:^3.1.0"
     "@backstage-community/plugin-tech-insights-backend-module-jsonfc": "npm:^0.10.0"
     "@backstage/backend-defaults": "npm:^0.18.1"
@@ -15673,7 +15672,6 @@ __metadata:
     "@internal/backstage-plugin-tech-insights-backend-module-retrievers": "workspace:^"
     app: "link:../app"
     better-sqlite3: "npm:^12.11.1"
-    node-gyp: "npm:^10.3.1"
     pg: "npm:^8.23.1"
   languageName: unknown
   linkType: soft

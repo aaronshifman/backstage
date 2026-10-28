@@ -1,0 +1,31 @@
+ci: &ci
+  - .github/path-filters.yaml
+  - .github/workflows/pr.yaml
+  - .github/workflows/release.yaml
+
+workspace: &workspace
+  - packages/**
+  - plugins/**
+  - package.json
+  - yarn.lock
+  - .yarnrc.yml
+  - backstage.json
+  - tsconfig.json
+
+code:
+  - *ci
+  - *workspace
+  - .eslintrc.js
+  - .eslintignore
+  - .prettierignore
+  - playwright.config.ts
+
+image:
+  - *ci
+  - *workspace
+  - app-config*.yaml
+  - .dockerignore
+
+chart:
+  - *ci
+  - charts/**
