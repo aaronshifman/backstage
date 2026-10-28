@@ -25,3 +25,6 @@ postgres:
 
 vault:
   url: vault.foo.com
+
+istio:
+  smokeTestPrincipals: []

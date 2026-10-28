@@ -14,4 +14,3 @@ spec:
         - source:
             principals:
               - cluster.local/ns/{{ .Release.Namespace }}/sa/{{ .Release.Namespace }}-waypoint
-              - cluster.local/ns/istio-system/sa/istio-ingress-istio
