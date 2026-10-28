@@ -14,7 +14,7 @@ import {
   ArgocdDeploymentSummary,
   ArgocdDeploymentLifecycle,
   isArgocdConfigured,
-} from '@backstage-community/plugin-argocd';
+} from '@backstage-community/plugin-argocd/legacy';
 import techInsightsPlugin from '@backstage-community/plugin-tech-insights/alpha';
 
 const argocdFrontendPlugin = convertLegacyPlugin(argocdPlugin, {
