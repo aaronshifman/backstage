@@ -1,0 +1,67 @@
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:recommended',
+    ':semanticCommits',
+    'docker:pinDigests',
+    'helpers:pinGitHubActionDigests',
+  ],
+  schedule: ['before 6am on monday'],
+  rangeStrategy: 'bump',
+  postUpdateOptions: ['yarnDedupeHighest'],
+  internalChecksFilter: 'strict',
+  osvVulnerabilityAlerts: true,
+  lockFileMaintenance: {
+    enabled: true,
+    schedule: ['before 6am on monday'],
+    semanticCommitType: 'fix',
+    semanticCommitScope: 'deps',
+  },
+
+  customManagers: [
+    {
+      description: 'Backstage release line',
+      customType: 'regex',
+      managerFilePatterns: ['/^backstage\\.json$/'],
+      matchStrings: ['"version":\\s*"(?<currentValue>[^"]+)"'],
+      depNameTemplate: 'backstage/backstage',
+      datasourceTemplate: 'github-releases',
+      extractVersionTemplate: '^v(?<version>.+)$',
+    },
+  ],
+
+  packageRules: [
+    { matchDatasources: ['npm'], minimumReleaseAge: '7 days' },
+
+    { matchManagers: ['npm'], matchPackageNames: ['@backstage/**'], enabled: false },
+    {
+      matchDepNames: ['backstage/backstage'],
+      groupName: 'backstage',
+      postUpgradeTasks: {
+        commands: [
+          'yarn install',
+          'yarn backstage-cli versions:bump --release {{{newVersion}}}',
+          'yarn dedupe',
+        ],
+        fileFilters: ['**/package.json', 'yarn.lock', 'backstage.json'],
+        executionMode: 'branch',
+      },
+    },
+
+    { matchPackageNames: ['@backstage-community/**'], groupName: 'backstage-community' },
+    { matchPackageNames: ['jest', '@jest/**', '@types/jest', 'jsdom'], groupName: 'jest' },
+    { matchPackageNames: ['@playwright/**', 'playwright'], groupName: 'playwright' },
+    { matchPackageNames: ['@types/**'], groupName: 'types' },
+    { matchManagers: ['dockerfile'], groupName: 'docker base images' },
+    { matchManagers: ['github-actions'], groupName: 'github actions' },
+    { matchPackageNames: ['node'], groupName: 'node' },
+    { matchPackageNames: ['node'], matchUpdateTypes: ['major'], dependencyDashboardApproval: true },
+
+    { matchDepTypes: ['dependencies'], semanticCommitType: 'fix', semanticCommitScope: 'deps' },
+    { matchDepTypes: ['devDependencies'], semanticCommitType: 'chore', semanticCommitScope: 'deps' },
+    { matchManagers: ['dockerfile'], semanticCommitType: 'fix', semanticCommitScope: 'deps' },
+    { matchDepNames: ['backstage/backstage'], semanticCommitType: 'fix', semanticCommitScope: 'deps' },
+    { matchManagers: ['github-actions'], semanticCommitType: 'ci', semanticCommitScope: 'deps' },
+    { matchFileNames: ['charts/**'], semanticCommitType: 'fix', semanticCommitScope: 'chart' },
+  ],
+}
