@@ -2,6 +2,7 @@ import { createBackendModule } from '@backstage/backend-plugin-api';
 import { techInsightsFactRetrieversExtensionPoint } from '@backstage-community/plugin-tech-insights-node';
 import { componentCompletenessFactRetriever } from './componentCompletenessFactRetriever';
 import { cnpgBackupFactRetriever } from './cnpgBackupFactRetriever';
+import { kubescapeSecurityFactRetriever } from './kubescapeSecurityFactRetriever';
 
 export const techInsightsModuleRetrievers = createBackendModule({
   pluginId: 'tech-insights',
@@ -13,6 +14,7 @@ export const techInsightsModuleRetrievers = createBackendModule({
         providers.addFactRetrievers({
           componentCompletenessFactRetriever,
           cnpgBackupFactRetriever,
+          kubescapeSecurityFactRetriever,
         });
       },
     });

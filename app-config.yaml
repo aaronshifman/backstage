@@ -237,6 +237,10 @@ techInsights:
       cadence: '0 3 * * *' # daily at 03:00
       initialDelay: { seconds: 90 }
       lifecycle: { timeToLive: { weeks: 2 } }
+    kubescapeSecurityFactRetriever:
+      cadence: '0 3 * * *' # daily at 03:00
+      initialDelay: { seconds: 90 }
+      lifecycle: { timeToLive: { weeks: 2 } }
   factChecker:
     checks:
       hasOwner:
@@ -341,3 +345,25 @@ techInsights:
               - fact: hoursSinceLastBackup
                 operator: lessThan
                 value: 24
+      kubescapeControlsPassing:
+        type: json-rules-engine
+        name: Kubescape controls passing
+        description: No failing Kubescape configuration-scan controls
+        factIds: [kubescapeSecurityFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: kubescapeFailedControls
+                operator: equal
+                value: 0
+      kubescapeNoCriticalVulnerabilities:
+        type: json-rules-engine
+        name: No critical vulnerabilities
+        description: No critical image vulnerabilities reported by Kubescape
+        factIds: [kubescapeSecurityFactRetriever]
+        rule:
+          conditions:
+            all:
+              - fact: kubescapeCriticalVulnerabilities
+                operator: equal
+                value: 0
