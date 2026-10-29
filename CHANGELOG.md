@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/aaronshifman/backstage/compare/app-v0.8.1...app-v0.9.0) (2026-10-29)
+
+
+### Features
+
+* add kubescape metrics report ([#23](https://github.com/aaronshifman/backstage/issues/23)) ([b1fc672](https://github.com/aaronshifman/backstage/commit/b1fc67264da1aff4b696dd4503519337a1e66727))
+
 ## [0.8.1](https://github.com/aaronshifman/backstage/compare/app-v0.8.0...app-v0.8.1) (2026-10-28)
 
 
