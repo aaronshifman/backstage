@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/aaronshifman/backstage/compare/chart-v0.9.1...chart-v0.9.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **chart:** release app 0.9.0 ([#24](https://github.com/aaronshifman/backstage/issues/24)) ([7d9fb9f](https://github.com/aaronshifman/backstage/commit/7d9fb9fee4fadfbd3d035f0129341d94d189cbd3))
+
 ## [0.9.1](https://github.com/aaronshifman/backstage/compare/chart-v0.9.0...chart-v0.9.1) (2026-10-28)
 
 
